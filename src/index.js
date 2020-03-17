@@ -108,7 +108,7 @@ class CurrencyInput extends Component {
      * @param nextProps
      * @see https://facebook.github.io/react/docs/component-specs.html#updating-componentwillreceiveprops
      */
-    componentWillReceiveProps(nextProps) {
+    UNSAFE_componentWillReceiveProps(nextProps) {
         this.setState(this.prepareProps(nextProps));
     }
 
@@ -140,7 +140,7 @@ class CurrencyInput extends Component {
      * @returns {XML}
      * @see https://facebook.github.io/react/docs/react-component.html#componentwillupdate
      */
-    componentWillUpdate() {
+    UNSAFE_componentWillUpdate() {
         let node = ReactDOM.findDOMNode(this.theInput);
         this.inputSelectionStart = node.selectionStart;
         this.inputSelectionEnd = node.selectionEnd;
