@@ -15,7 +15,12 @@ const config = {
   sourcemap: true,
   output: {
     file,
-    format
+    format,
+    globals: {
+      react: "React",
+      "react-dom": "ReactDOM",
+      "prop-types": "PropTypes"
+    }
   },
   plugins: [
     peerDeps(),
