@@ -19,26 +19,15 @@ export default function mask(
     // extract digits. if no digits, fill in a zero.
     let digits = value.match(/\d/g) || ['0'];
 
-    let numberIsNegative = false;
-    if (allowNegative) {
-        let negativeSignCount = (value.match(/-/g) || []).length;
-        // number will be negative if we have an odd number of "-"
-        // ideally, we should only ever have 0, 1 or 2 (positive number, making a number negative
-        // and making a negative number positive, respectively)
-        numberIsNegative = negativeSignCount % 2 === 1;
-
-        // if every digit in the array is '0', then the number should never be negative
-        let allDigitsAreZero = true;
-        for (let idx = 0; idx < digits.length; idx += 1) {
-            if (digits[idx] !== '0') {
-                allDigitsAreZero = false;
-                break;
-            }
-        }
-        if (allDigitsAreZero) {
-            numberIsNegative = false;
-        }
-    }
+    // number will be negative if we have an odd number of "-";
+    // ideally, we should only ever have 0, 1 or 2 (positive number, making a number negative
+    // and making a negative number positive, respectively);
+    // if every digit in the array is '0', then the number should never be negative
+    const allDigitsAreZero = digits.every(digit => digit === '0');
+    const negativeSignCount = (value.match(/-/g) || []).length;
+    const negativeSignCountAreOdd = negativeSignCount % 2 === 1;
+    const numberIsNegative =
+        allowNegative && !allDigitsAreZero && negativeSignCountAreOdd;
 
     // zero-pad a input
     while (digits.length <= precision) {
