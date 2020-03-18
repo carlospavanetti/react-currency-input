@@ -59,7 +59,7 @@ export default function mask(
 
     // if the number is negative, insert a "-" to
     // the front of the array and negate the raw value
-    if (allowNegative && numberIsNegative) {
+    if (numberIsNegative) {
         digits.unshift('-');
         raw = -raw;
     }
