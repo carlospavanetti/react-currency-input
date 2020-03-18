@@ -8,24 +8,13 @@ export default function mask(
     suffix = ''
 ) {
     // provide some default values and arg validation.
-    if (precision < 0) precision = 0; // precision cannot be negative
-    if (precision > 20) precision = 20; // precision cannot be greater than 20
+    if (isEmpty(value)) return emptyResult;
 
-    if (value === null || value === undefined) {
-        return {
-            value: 0,
-            maskedValue: ''
-        };
-    }
+    precision = Math.max(precision, 0); // precision cannot be negative
+    precision = Math.min(precision, 20); // precision cannot be greater than 20
 
-    value = String(value); //if the given value is a Number, let's convert into String to manipulate that
-
-    if (value.length == 0) {
-        return {
-            value: 0,
-            maskedValue: ''
-        };
-    }
+    //if the given value is a Number, let's convert into String to manipulate that
+    value = String(value);
 
     // extract digits. if no digits, fill in a zero.
     let digits = value.match(/\d/g) || ['0'];
@@ -101,3 +90,12 @@ export default function mask(
         maskedValue: digits.join('').trim()
     };
 }
+
+function isEmpty(value) {
+    return value === null || value === undefined || String(value).length == 0;
+}
+
+const emptyResult = {
+    value: 0,
+    maskedValue: ''
+};
