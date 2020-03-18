@@ -29,20 +29,10 @@ export default function mask(
     const numberIsNegative =
         allowNegative && !allDigitsAreZero && negativeSignCountAreOdd;
 
-    // zero-pad a input
-    while (digits.length <= precision) {
-        digits.unshift('0');
-    }
+    digits = zeroPadded(digits, precision);
+    digits = withDecimalSeparator(digits, precision);
+    digits = cleanOfExtraneousDigits(digits, precision);
 
-    if (precision > 0) {
-        // add the decimal separator
-        digits.splice(digits.length - precision, 0, '.');
-    }
-
-    // clean up extraneous digits like leading zeros.
-    digits = Number(digits.join(''))
-        .toFixed(precision)
-        .split('');
     let raw = Number(digits.join(''));
 
     let decimalpos = digits.length - precision - 1; // -1 needed to position the decimal separator before the digits.
@@ -88,3 +78,23 @@ const emptyResult = {
     value: 0,
     maskedValue: ''
 };
+
+function zeroPadded(digits, precision) {
+    const missings = digits.length - precision + 1;
+    return Array(missings)
+        .fill('0')
+        .concat(digits);
+}
+
+function withDecimalSeparator(digits, precision) {
+    const integer = digits.slice(0, digits.length - precision);
+    const decimal = digits.slice(digits.length - precision);
+    return precision > 0 ? [...integer, '.', ...decimal] : digits;
+}
+
+function cleanOfExtraneousDigits(digits, precision) {
+    // clean up extraneous digits like leading zeros.
+    return Number(digits.join(''))
+        .toFixed(precision)
+        .split('');
+}
