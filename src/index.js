@@ -50,58 +50,9 @@ class CurrencyInput extends Component {
      * @returns {{ maskedValue: {String}, value: {Number}, customProps: {Object} }}
      */
     prepareProps(props) {
-        let customProps = { ...props }; // babeljs converts to Object.assign, then polyfills.
-        delete customProps.onChange;
-        delete customProps.onChangeEvent;
-        delete customProps.value;
-        delete customProps.decimalSeparator;
-        delete customProps.thousandSeparator;
-        delete customProps.precision;
-        delete customProps.inputType;
-        delete customProps.allowNegative;
-        delete customProps.allowEmpty;
-        delete customProps.prefix;
-        delete customProps.suffix;
-        delete customProps.selectAllOnFocus;
-        delete customProps.autoFocus;
-
-        let initialValue = props.value;
-        if (initialValue === null) {
-            initialValue = props.allowEmpty ? null : '';
-        } else {
-            if (typeof initialValue == 'string') {
-                // Some people, when confronted with a problem, think "I know, I'll use regular expressions."
-                // Now they have two problems.
-
-                // Strip out thousand separators, prefix, and suffix, etc.
-                if (props.thousandSeparator === '.') {
-                    // special handle the . thousand separator
-                    initialValue = initialValue.replace(/\./g, '');
-                }
-
-                if (props.decimalSeparator != '.') {
-                    // fix the decimal separator
-                    initialValue = initialValue.replace(
-                        new RegExp(props.decimalSeparator, 'g'),
-                        '.'
-                    );
-                }
-
-                //Strip out anything that is not a digit, -, or decimal separator
-                initialValue = initialValue.replace(/[^0-9-.]/g, '');
-
-                // now we can parse.
-                initialValue = Number.parseFloat(initialValue);
-            }
-            initialValue = Number(initialValue).toLocaleString(undefined, {
-                style: 'decimal',
-                minimumFractionDigits: props.precision,
-                maximumFractionDigits: props.precision
-            });
-        }
-
+        const customProps = onlyCustomFrom(props);
         const { maskedValue, value } = mask(
-            initialValue,
+            initialValueFrom(props),
             props.precision,
             props.decimalSeparator,
             props.thousandSeparator,
@@ -109,7 +60,6 @@ class CurrencyInput extends Component {
             props.prefix,
             props.suffix
         );
-
         return { maskedValue, value, customProps };
     }
 
@@ -343,3 +293,65 @@ CurrencyInput.defaultProps = {
 };
 
 export default CurrencyInput;
+
+function onlyCustomFrom(props) {
+    const customProps = { ...props }; // babeljs converts to Object.assign, then polyfills.
+    delete customProps.onChange;
+    delete customProps.onChangeEvent;
+    delete customProps.value;
+    delete customProps.decimalSeparator;
+    delete customProps.thousandSeparator;
+    delete customProps.precision;
+    delete customProps.inputType;
+    delete customProps.allowNegative;
+    delete customProps.allowEmpty;
+    delete customProps.prefix;
+    delete customProps.suffix;
+    delete customProps.selectAllOnFocus;
+    delete customProps.autoFocus;
+    return customProps;
+}
+
+function initialValueFrom(props) {
+    let initialValue = props.value;
+    if (initialValue === null) {
+        initialValue = props.allowEmpty ? null : '';
+    } else {
+        if (typeof initialValue == 'string') {
+            initialValue = Number.parseFloat(
+                // now we can parse.
+                unmask(
+                    initialValue,
+                    props.decimalSeparator,
+                    props.thousandSeparator
+                )
+            );
+        }
+        initialValue = Number(initialValue).toLocaleString(undefined, {
+            style: 'decimal',
+            minimumFractionDigits: props.precision,
+            maximumFractionDigits: props.precision
+        });
+    }
+    return initialValue;
+}
+
+function unmask(value, decimalSeparator, thousandSeparator) {
+    // Some people, when confronted with a problem, think "I know, I'll use regular expressions."
+    // Now they have two problems.
+
+    // Strip out thousand separators, prefix, and suffix, etc.
+    if (thousandSeparator === '.') {
+        // special handle the . thousand separator
+        value = value.replace(/\./g, '');
+    }
+
+    if (decimalSeparator != '.') {
+        // fix the decimal separator
+        value = value.replace(new RegExp(decimalSeparator, 'g'), '.');
+    }
+
+    //Strip out anything that is not a digit, -, or decimal separator
+    value = value.replace(/[^0-9-.]/g, '');
+    return value;
+}
