@@ -10,11 +10,11 @@ export default function mask(
     // provide some default values and arg validation.
     if (isEmpty(value)) return emptyResult;
 
-    precision = Math.max(precision, 0); // precision cannot be negative
-    precision = Math.min(precision, 20); // precision cannot be greater than 20
-
     //if the given value is a Number, let's convert into String to manipulate that
     value = String(value);
+
+    precision = Math.max(precision, 0); // precision cannot be negative
+    precision = Math.min(precision, 20); // precision cannot be greater than 20
 
     // extract digits. if no digits, fill in a zero.
     const digits = withSetPrecision(value, precision);
@@ -30,24 +30,15 @@ export default function mask(
         allowNegative && raw !== 0 && negativeSignCountAreOdd;
     const minusSign = numberIsNegative ? '-' : '';
 
-    let decimalpos = digits.length - precision - 1; // -1 needed to position the decimal separator before the digits.
-    if (precision > 0) {
-        // set the final decimal separator
-        digits[decimalpos] = decimalSeparator;
-    } else {
-        // when precision is 0, there is no decimal separator.
-        decimalpos = digits.length;
-    }
-
-    // add in any thousand separators
-    for (let x = decimalpos - 3; x > 0; x = x - 3) {
-        digits.splice(x, 0, thousandSeparator);
-    }
-
-    const maskedValue = digits.join('');
+    const masked = valueWithSeparators(
+        digits,
+        precision,
+        decimalSeparator,
+        thousandSeparator
+    );
     return {
         value: numberIsNegative ? -raw : raw,
-        maskedValue: `${minusSign}${prefix}${maskedValue}${suffix}`.trim()
+        maskedValue: `${minusSign}${prefix}${masked}${suffix}`.trim()
     };
 }
 
@@ -93,4 +84,21 @@ function cleanOfExtraneousDigits(digits, precision) {
     return Number(digits.join(''))
         .toFixed(precision)
         .split('');
+}
+
+function valueWithSeparators(
+    digits,
+    precision,
+    decimalSeparator,
+    thousandSeparator
+) {
+    const masked = [...digits];
+    const decimalpos = masked.length - precision - 1; // -1 needed to position the decimal separator before the digits.
+    if (precision > 0) masked[decimalpos] = decimalSeparator;
+
+    const integerStart = precision > 0 ? decimalpos : masked.length;
+    for (let x = integerStart - 3; x > 0; x = x - 3) {
+        masked.splice(x, 0, thousandSeparator);
+    }
+    return masked.join('');
 }
