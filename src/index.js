@@ -1,9 +1,9 @@
 import './object-assign-polyfill';
 
 import PropTypes from 'prop-types';
-import React, { Component }  from 'react'
-import ReactDOM from 'react-dom'
-import mask from './mask.js'
+import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
+import mask from './mask.js';
 
 // IE* parseFloat polyfill
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/parseFloat#Polyfill
@@ -22,7 +22,6 @@ class CurrencyInput extends Component {
         this.inputSelectionEnd = 1;
     }
 
-
     /**
      * Exposes the current masked value.
      *
@@ -32,13 +31,12 @@ class CurrencyInput extends Component {
         return this.state.maskedValue;
     }
 
-
     /**
      * General function used to cleanup and define the final props used for rendering
      * @returns {{ maskedValue: {String}, value: {Number}, customProps: {Object} }}
      */
     prepareProps(props) {
-        let customProps = {...props}; // babeljs converts to Object.assign, then polyfills.
+        let customProps = { ...props }; // babeljs converts to Object.assign, then polyfills.
         delete customProps.onChange;
         delete customProps.onChangeEvent;
         delete customProps.value;
@@ -55,22 +53,24 @@ class CurrencyInput extends Component {
 
         let initialValue = props.value;
         if (initialValue === null) {
-            initialValue = props.allowEmpty? null : '';
-        }else{
-
+            initialValue = props.allowEmpty ? null : '';
+        } else {
             if (typeof initialValue == 'string') {
                 // Some people, when confronted with a problem, think "I know, I'll use regular expressions."
                 // Now they have two problems.
 
                 // Strip out thousand separators, prefix, and suffix, etc.
-                if (props.thousandSeparator === "."){
+                if (props.thousandSeparator === '.') {
                     // special handle the . thousand separator
                     initialValue = initialValue.replace(/\./g, '');
                 }
 
-                if (props.decimalSeparator != "."){
+                if (props.decimalSeparator != '.') {
                     // fix the decimal separator
-                    initialValue = initialValue.replace(new RegExp(props.decimalSeparator, 'g'), '.');
+                    initialValue = initialValue.replace(
+                        new RegExp(props.decimalSeparator, 'g'),
+                        '.'
+                    );
                 }
 
                 //Strip out anything that is not a digit, -, or decimal separator
@@ -80,11 +80,10 @@ class CurrencyInput extends Component {
                 initialValue = Number.parseFloat(initialValue);
             }
             initialValue = Number(initialValue).toLocaleString(undefined, {
-                style                : 'decimal',
+                style: 'decimal',
                 minimumFractionDigits: props.precision,
                 maximumFractionDigits: props.precision
-            })
-
+            });
         }
 
         const { maskedValue, value } = mask(
@@ -100,7 +99,6 @@ class CurrencyInput extends Component {
         return { maskedValue, value, customProps };
     }
 
-
     /**
      * Component lifecycle function.
      * Invoked when a component is receiving new props. This method is not called for the initial render.
@@ -112,28 +110,30 @@ class CurrencyInput extends Component {
         this.setState(this.prepareProps(nextProps));
     }
 
-
     /**
      * Component lifecycle function.
      * @returns {XML}
      * @see https://facebook.github.io/react/docs/react-component.html#componentdidmount
      */
-    componentDidMount(){
+    componentDidMount() {
         let node = ReactDOM.findDOMNode(this.theInput);
         let selectionStart, selectionEnd;
 
         if (this.props.autoFocus) {
             this.theInput.focus();
-            selectionEnd = this.state.maskedValue.length - this.props.suffix.length;
+            selectionEnd =
+                this.state.maskedValue.length - this.props.suffix.length;
             selectionStart = selectionEnd;
         } else {
-            selectionEnd = Math.min(node.selectionEnd, this.theInput.value.length - this.props.suffix.length);
+            selectionEnd = Math.min(
+                node.selectionEnd,
+                this.theInput.value.length - this.props.suffix.length
+            );
             selectionStart = Math.min(node.selectionStart, selectionEnd);
         }
 
         this.setSelectionRange(node, selectionStart, selectionEnd);
     }
-
 
     /**
      * Component lifecycle function
@@ -146,24 +146,42 @@ class CurrencyInput extends Component {
         this.inputSelectionEnd = node.selectionEnd;
     }
 
-
     /**
      * Component lifecycle function.
      * @returns {XML}
      * @see https://facebook.github.io/react/docs/react-component.html#componentdidupdate
      */
-    componentDidUpdate(prevProps, prevState){
+    componentDidUpdate(prevProps, prevState) {
         const { decimalSeparator } = this.props;
         let node = ReactDOM.findDOMNode(this.theInput);
-        let isNegative = (this.theInput.value.match(/-/g) || []).length % 2 === 1;
+        let isNegative =
+            (this.theInput.value.match(/-/g) || []).length % 2 === 1;
         let minPos = this.props.prefix.length + (isNegative ? 1 : 0);
-        let selectionEnd = Math.max(minPos, Math.min(this.inputSelectionEnd, this.theInput.value.length - this.props.suffix.length));
-        let selectionStart = Math.max(minPos, Math.min(this.inputSelectionEnd, selectionEnd));
+        let selectionEnd = Math.max(
+            minPos,
+            Math.min(
+                this.inputSelectionEnd,
+                this.theInput.value.length - this.props.suffix.length
+            )
+        );
+        let selectionStart = Math.max(
+            minPos,
+            Math.min(this.inputSelectionEnd, selectionEnd)
+        );
 
         let regexEscapeRegex = /[-[\]{}()*+?.,\\^$|#\s]/g;
-        let separatorsRegex = new RegExp(decimalSeparator.replace(regexEscapeRegex, '\\$&') + '|' + this.props.thousandSeparator.replace(regexEscapeRegex, '\\$&'), 'g');
-        let currSeparatorCount = (this.state.maskedValue.match(separatorsRegex) || []).length;
-        let prevSeparatorCount = (prevState.maskedValue.match(separatorsRegex) || []).length;
+        let separatorsRegex = new RegExp(
+            decimalSeparator.replace(regexEscapeRegex, '\\$&') +
+                '|' +
+                this.props.thousandSeparator.replace(regexEscapeRegex, '\\$&'),
+            'g'
+        );
+        let currSeparatorCount = (
+            this.state.maskedValue.match(separatorsRegex) || []
+        ).length;
+        let prevSeparatorCount = (
+            prevState.maskedValue.match(separatorsRegex) || []
+        ).length;
         let adjustment = Math.max(currSeparatorCount - prevSeparatorCount, 0);
 
         selectionEnd = selectionEnd + adjustment;
@@ -171,15 +189,17 @@ class CurrencyInput extends Component {
 
         const precision = Number(this.props.precision);
 
-        let baselength = this.props.suffix.length
-            + this.props.prefix.length
-            + (precision > 0 ? decimalSeparator.length : 0) // if precision is 0 there will be no decimal part
-            + precision
-            + 1; // This is to account for the default '0' value that comes before the decimal separator
+        let baselength =
+            this.props.suffix.length +
+            this.props.prefix.length +
+            (precision > 0 ? decimalSeparator.length : 0) + // if precision is 0 there will be no decimal part
+            precision +
+            1; // This is to account for the default '0' value that comes before the decimal separator
 
-        if (this.state.maskedValue.length == baselength){
+        if (this.state.maskedValue.length == baselength) {
             // if we are already at base length, position the cursor at the end.
-            selectionEnd = this.theInput.value.length - this.props.suffix.length;
+            selectionEnd =
+                this.theInput.value.length - this.props.suffix.length;
             selectionStart = selectionEnd;
         }
 
@@ -195,11 +215,10 @@ class CurrencyInput extends Component {
      * @param end number
      */
     setSelectionRange(node, start, end) {
-      if (document.activeElement === node) {
-        node.setSelectionRange(start, end);
-      }
+        if (document.activeElement === node) {
+            node.setSelectionRange(start, end);
+        }
     }
-
 
     /**
      * onChange Event Handler
@@ -217,14 +236,13 @@ class CurrencyInput extends Component {
             this.props.suffix
         );
 
-        event.persist();  // fixes issue #23
+        event.persist(); // fixes issue #23
 
         this.setState({ maskedValue, value }, () => {
             this.props.onChange(maskedValue, value, event);
             this.props.onChangeEvent(event, maskedValue, value);
         });
     }
-
 
     /**
      * onFocus Event Handler
@@ -234,20 +252,21 @@ class CurrencyInput extends Component {
         if (!this.theInput) return;
 
         //Whenever we receive focus check to see if the position is before the suffix, if not, move it.
-        let selectionEnd = this.theInput.value.length - this.props.suffix.length;
-        let isNegative = (this.theInput.value.match(/-/g) || []).length % 2 === 1;
+        let selectionEnd =
+            this.theInput.value.length - this.props.suffix.length;
+        let isNegative =
+            (this.theInput.value.match(/-/g) || []).length % 2 === 1;
         let selectionStart = this.props.prefix.length + (isNegative ? 1 : 0);
-        this.props.selectAllOnFocus && event.target.setSelectionRange(selectionStart, selectionEnd);
+        this.props.selectAllOnFocus &&
+            event.target.setSelectionRange(selectionStart, selectionEnd);
         this.inputSelectionStart = selectionStart;
         this.inputSelectionEnd = selectionEnd;
     }
-
 
     handleBlur(event) {
         this.inputSelectionStart = 0;
         this.inputSelectionEnd = 0;
     }
-
 
     /**
      * Component lifecycle function.
@@ -257,7 +276,9 @@ class CurrencyInput extends Component {
     render() {
         return (
             <input
-                ref={(input) => { this.theInput = input; }}
+                ref={input => {
+                    this.theInput = input;
+                }}
                 type={this.props.inputType}
                 value={this.state.maskedValue}
                 onChange={this.handleChange}
@@ -265,11 +286,9 @@ class CurrencyInput extends Component {
                 onMouseUp={this.handleFocus}
                 {...this.state.customProps}
             />
-        )
+        );
     }
 }
-
-
 
 /**
  * Prop validation.
@@ -290,10 +309,13 @@ CurrencyInput.propTypes = {
     selectAllOnFocus: PropTypes.bool
 };
 
-
 CurrencyInput.defaultProps = {
-    onChange: function(maskValue, value, event) {/*no-op*/},
-    onChangeEvent: function(event, maskValue, value) {/*no-op*/},
+    onChange: function(maskValue, value, event) {
+        /*no-op*/
+    },
+    onChangeEvent: function(event, maskValue, value) {
+        /*no-op*/
+    },
     autoFocus: false,
     value: '0',
     decimalSeparator: '.',
@@ -306,5 +328,4 @@ CurrencyInput.defaultProps = {
     selectAllOnFocus: false
 };
 
-
-export default CurrencyInput
+export default CurrencyInput;

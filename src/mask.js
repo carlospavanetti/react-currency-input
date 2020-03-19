@@ -27,7 +27,7 @@ export default function mask(
         thousandSeparator
     );
 
-    const isNegative = numberIsNegative(value, raw, allowNegative);
+    const isNegative = numberIsNegative(value, rawValue, allowNegative);
     const minusSign = isNegative ? '-' : '';
     return {
         value: isNegative ? -rawValue : rawValue,
