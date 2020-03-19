@@ -30,7 +30,8 @@ class CurrencyInput extends Component {
         this.handleChange = this.handleChange.bind(this);
         this.handleFocus = this.handleFocus.bind(this);
         this.setSelectionRange = this.setSelectionRange.bind(this);
-        this.state = this.prepareProps(this.props);
+        this.state = prepareProps(this.props);
+        this.inputSelectionEnd = 1;
     }
 
     /**
@@ -46,18 +47,6 @@ class CurrencyInput extends Component {
      * General function used to cleanup and define the final props used for rendering
      * @returns {{ maskedValue: {String}, value: {Number} }}
      */
-    prepareProps(props) {
-        const { maskedValue, value } = mask(
-            initialValueFrom(props),
-            props.precision,
-            props.decimalSeparator,
-            props.thousandSeparator,
-            props.allowNegative,
-            props.prefix,
-            props.suffix
-        );
-        return { maskedValue, value };
-    }
 
     // /**
     //  * Component lifecycle function.
@@ -76,23 +65,13 @@ class CurrencyInput extends Component {
      * @see https://facebook.github.io/react/docs/react-component.html#componentdidmount
      */
     componentDidMount() {
-        let node = ReactDOM.findDOMNode(this.theInput);
-        let selectionStart, selectionEnd;
-
-        if (this.props.autoFocus) {
-            this.theInput.focus();
-            selectionEnd =
-                this.state.maskedValue.length - this.props.suffix.length;
-            selectionStart = selectionEnd;
-        } else {
-            selectionEnd = Math.min(
-                node.selectionEnd,
-                this.theInput.value.length - this.props.suffix.length
-            );
-            selectionStart = Math.min(node.selectionStart, selectionEnd);
-        }
-
-        this.setSelectionRange(node, selectionStart, selectionEnd);
+        firstEffect(
+            this.theInput,
+            this.state.maskedValue,
+            this.props.suffix,
+            this.setSelectionRange,
+            this.props.autoFocus
+        );
     }
 
     /**
@@ -102,6 +81,7 @@ class CurrencyInput extends Component {
      */
     UNSAFE_componentWillUpdate() {
         let node = ReactDOM.findDOMNode(this.theInput);
+        this.inputSelectionEnd = node.selectionEnd;
     }
 
     /**
@@ -110,58 +90,18 @@ class CurrencyInput extends Component {
      * @see https://facebook.github.io/react/docs/react-component.html#componentdidupdate
      */
     componentDidUpdate(prevProps, prevState) {
-        const { decimalSeparator } = this.props;
-        let node = ReactDOM.findDOMNode(this.theInput);
-        let isNegative =
-            (this.theInput.value.match(/-/g) || []).length % 2 === 1;
-        let minPos = this.props.prefix.length + (isNegative ? 1 : 0);
-        let selectionEnd = Math.max(
-            minPos,
-            Math.min(
-                this.inputSelectionEnd,
-                this.theInput.value.length - this.props.suffix.length
-            )
+        nextEffect(
+            prevState,
+            this.theInput,
+            this.state.maskedValue,
+            this.props.decimalSeparator,
+            this.props.thousandSeparator,
+            this.props.precision,
+            this.props.prefix,
+            this.props.suffix,
+            this.setSelectionRange,
+            this.inputSelectionEnd
         );
-        let selectionStart = Math.max(
-            minPos,
-            Math.min(this.inputSelectionEnd, selectionEnd)
-        );
-
-        let regexEscapeRegex = /[-[\]{}()*+?.,\\^$|#\s]/g;
-        let separatorsRegex = new RegExp(
-            decimalSeparator.replace(regexEscapeRegex, '\\$&') +
-                '|' +
-                this.props.thousandSeparator.replace(regexEscapeRegex, '\\$&'),
-            'g'
-        );
-        let currSeparatorCount = (
-            this.state.maskedValue.match(separatorsRegex) || []
-        ).length;
-        let prevSeparatorCount = (
-            prevState.maskedValue.match(separatorsRegex) || []
-        ).length;
-        let adjustment = Math.max(currSeparatorCount - prevSeparatorCount, 0);
-
-        selectionEnd = selectionEnd + adjustment;
-        selectionStart = selectionStart + adjustment;
-
-        const precision = Number(this.props.precision);
-
-        let baselength =
-            this.props.suffix.length +
-            this.props.prefix.length +
-            (precision > 0 ? decimalSeparator.length : 0) + // if precision is 0 there will be no decimal part
-            precision +
-            1; // This is to account for the default '0' value that comes before the decimal separator
-
-        if (this.state.maskedValue.length == baselength) {
-            // if we are already at base length, position the cursor at the end.
-            selectionEnd =
-                this.theInput.value.length - this.props.suffix.length;
-            selectionStart = selectionEnd;
-        }
-
-        this.setSelectionRange(node, selectionStart, selectionEnd);
     }
 
     /**
@@ -170,9 +110,12 @@ class CurrencyInput extends Component {
      * @param start number
      * @param end number
      */
-    setSelectionRange(node, start, end) {
+    setSelectionRange(node, start, end, setForComponent) {
         if (document.activeElement === node) {
             node.setSelectionRange(start, end);
+        }
+        if (setForComponent) {
+            this.inputSelectionEnd = end;
         }
     }
 
@@ -181,23 +124,7 @@ class CurrencyInput extends Component {
      * @param event
      */
     handleChange(event) {
-        event.preventDefault();
-        let { maskedValue, value } = mask(
-            event.target.value,
-            this.props.precision,
-            this.props.decimalSeparator,
-            this.props.thousandSeparator,
-            this.props.allowNegative,
-            this.props.prefix,
-            this.props.suffix
-        );
-
-        event.persist(); // fixes issue #23
-
-        this.setState({ maskedValue, value }, () => {
-            this.props.onChange(maskedValue, value, event);
-            this.props.onChangeEvent(event, maskedValue, value);
-        });
+        handleChange_(event, this.props, this.setState.bind(this));
     }
 
     /**
@@ -205,19 +132,18 @@ class CurrencyInput extends Component {
      * @param event
      */
     handleFocus(event) {
-        if (!this.theInput) return;
-
-        //Whenever we receive focus check to see if the position is before the suffix, if not, move it.
-        let selectionEnd =
-            this.theInput.value.length - this.props.suffix.length;
-        let isNegative =
-            (this.theInput.value.match(/-/g) || []).length % 2 === 1;
-        let selectionStart = this.props.prefix.length + (isNegative ? 1 : 0);
-        this.props.selectAllOnFocus &&
-            event.target.setSelectionRange(selectionStart, selectionEnd);
+        this.inputSelectionEnd = handleFocus_(
+            event,
+            this.theInput,
+            this.props.prefix,
+            this.props.suffix,
+            this.props.selectAllOnFocus
+        );
     }
 
-    handleBlur(event) {}
+    handleBlur(event) {
+        this.inputSelectionEnd = 0;
+    }
 
     /**
      * Component lifecycle function.
@@ -280,6 +206,132 @@ CurrencyInput.defaultProps = {
 };
 
 export default CurrencyInput;
+
+function prepareProps(props) {
+    const { maskedValue, value } = mask(
+        initialValueFrom(props),
+        props.precision,
+        props.decimalSeparator,
+        props.thousandSeparator,
+        props.allowNegative,
+        props.prefix,
+        props.suffix
+    );
+    return { maskedValue, value };
+}
+
+function firstEffect(
+    theInput,
+    maskedValue,
+    suffix,
+    setSelectionRange,
+    autoFocus
+) {
+    let node = ReactDOM.findDOMNode(theInput);
+    let selectionStart, selectionEnd;
+
+    if (autoFocus) {
+        theInput.focus();
+        selectionEnd = maskedValue.length - suffix.length;
+        selectionStart = selectionEnd;
+    } else {
+        selectionEnd = Math.min(
+            node.selectionEnd,
+            theInput.value.length - suffix.length
+        );
+        selectionStart = Math.min(node.selectionStart, selectionEnd);
+    }
+
+    setSelectionRange(node, selectionStart, selectionEnd);
+}
+
+function nextEffect(
+    prevState,
+    theInput,
+    maskedValue,
+    decimalSeparator,
+    thousandSeparator,
+    precision,
+    prefix,
+    suffix,
+    setSelectionRange,
+    inputSelectionEnd
+) {
+    let node = ReactDOM.findDOMNode(theInput);
+    let isNegative = (theInput.value.match(/-/g) || []).length % 2 === 1;
+    let minPos = prefix.length + (isNegative ? 1 : 0);
+    let selectionEnd = Math.max(
+        minPos,
+        Math.min(inputSelectionEnd, theInput.value.length - suffix.length)
+    );
+    let selectionStart = Math.max(
+        minPos,
+        Math.min(inputSelectionEnd, selectionEnd)
+    );
+
+    let regexEscapeRegex = /[-[\]{}()*+?.,\\^$|#\s]/g;
+    let separatorsRegex = new RegExp(
+        decimalSeparator.replace(regexEscapeRegex, '\\$&') +
+            '|' +
+            thousandSeparator.replace(regexEscapeRegex, '\\$&'),
+        'g'
+    );
+    let currSeparatorCount = (maskedValue.match(separatorsRegex) || []).length;
+    let prevSeparatorCount = (
+        prevState.maskedValue.match(separatorsRegex) || []
+    ).length;
+    let adjustment = Math.max(currSeparatorCount - prevSeparatorCount, 0);
+
+    selectionEnd = selectionEnd + adjustment;
+    selectionStart = selectionStart + adjustment;
+
+    precision = Number(precision);
+
+    let baselength =
+        suffix.length +
+        prefix.length +
+        (precision > 0 ? decimalSeparator.length : 0) + // if precision is 0 there will be no decimal part
+        precision +
+        1; // This is to account for the default '0' value that comes before the decimal separator
+
+    if (maskedValue.length == baselength) {
+        // if we are already at base length, position the cursor at the end.
+        selectionEnd = theInput.value.length - suffix.length;
+        selectionStart = selectionEnd;
+    }
+
+    setSelectionRange(node, selectionStart, selectionEnd, true);
+}
+
+function handleChange_(event, props, setState) {
+    event.preventDefault();
+    let { maskedValue, value } = mask(
+        event.target.value,
+        props.precision,
+        props.decimalSeparator,
+        props.thousandSeparator,
+        props.allowNegative,
+        props.prefix,
+        props.suffix
+    );
+    event.persist(); // fixes issue #23
+    setState({ maskedValue, value }, () => {
+        props.onChange(maskedValue, value, event);
+        props.onChangeEvent(event, maskedValue, value);
+    });
+}
+
+function handleFocus_(event, theInput, prefix, suffix, selectAllOnFocus) {
+    if (!theInput) return;
+
+    //Whenever we receive focus check to see if the position is before the suffix, if not, move it.
+    let selectionEnd = theInput.value.length - suffix.length;
+    let isNegative = (theInput.value.match(/-/g) || []).length % 2 === 1;
+    let selectionStart = prefix.length + (isNegative ? 1 : 0);
+    selectAllOnFocus &&
+        event.target.setSelectionRange(selectionStart, selectionEnd);
+    return selectionEnd;
+}
 
 function onlyCustomFrom(props) {
     const customProps = { ...props }; // babeljs converts to Object.assign, then polyfills.
