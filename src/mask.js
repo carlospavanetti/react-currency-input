@@ -17,25 +17,20 @@ export default function mask(
     value = String(value);
 
     // extract digits. if no digits, fill in a zero.
-    let digits = value.match(/\d/g) || ['0'];
+    const digits = withSetPrecision(value, precision);
+    let raw = Number(digits.join(''));
 
     // number will be negative if we have an odd number of "-";
     // ideally, we should only ever have 0, 1 or 2 (positive number, making a number negative
     // and making a negative number positive, respectively);
-    // if every digit in the array is '0', then the number should never be negative
-    const allDigitsAreZero = digits.every(digit => digit === '0');
+    // if raw value is 0, then the number should never be negative.
+    const allDigitsAreZero = raw == 0;
     const negativeSignCount = (value.match(/-/g) || []).length;
     const negativeSignCountAreOdd = negativeSignCount % 2 === 1;
     const numberIsNegative =
         allowNegative && !allDigitsAreZero && negativeSignCountAreOdd;
 
-    digits = zeroPadded(digits, precision);
-    digits = withDecimalSeparator(digits, precision);
-    digits = cleanOfExtraneousDigits(digits, precision);
-
-    let raw = Number(digits.join(''));
-
-    let decimalpos = digits.length - precision - 1; // -1 needed to position the decimal separator before the digits.
+    const decimalpos = digits.length - precision - 1; // -1 needed to position the decimal separator before the digits.
     if (precision > 0) {
         // set the final decimal separator
         digits[decimalpos] = decimalSeparator;
@@ -78,6 +73,21 @@ const emptyResult = {
     value: 0,
     maskedValue: ''
 };
+
+function withSetPrecision(value, precision) {
+    const pipe = (fns, input) => fns.reduce((acc, fn) => fn(acc), input);
+    const pipeline = [
+        digitsFromValue,
+        digits => zeroPadded(digits, precision),
+        digits => withDecimalSeparator(digits, precision),
+        digits => cleanOfExtraneousDigits(digits, precision)
+    ];
+    return pipe(pipeline, value);
+}
+
+function digitsFromValue(value) {
+    return value.match(/\d/g) || ['0'];
+}
 
 function zeroPadded(digits, precision) {
     const missings = digits.length - precision + 1;
