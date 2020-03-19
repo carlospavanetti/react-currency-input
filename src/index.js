@@ -27,14 +27,10 @@ function FunctionalComponent(props) {
 class CurrencyInput extends Component {
     constructor(props) {
         super(props);
-        this.prepareProps = this.prepareProps.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.handleFocus = this.handleFocus.bind(this);
         this.setSelectionRange = this.setSelectionRange.bind(this);
         this.state = this.prepareProps(this.props);
-
-        this.inputSelectionStart = 1;
-        this.inputSelectionEnd = 1;
     }
 
     /**
@@ -63,16 +59,16 @@ class CurrencyInput extends Component {
         return { maskedValue, value };
     }
 
-    /**
-     * Component lifecycle function.
-     * Invoked when a component is receiving new props. This method is not called for the initial render.
-     *
-     * @param nextProps
-     * @see https://facebook.github.io/react/docs/component-specs.html#updating-componentwillreceiveprops
-     */
-    UNSAFE_componentWillReceiveProps(nextProps) {
-        this.setState(this.prepareProps(nextProps));
-    }
+    // /**
+    //  * Component lifecycle function.
+    //  * Invoked when a component is receiving new props. This method is not called for the initial render.
+    //  *
+    //  * @param nextProps
+    //  * @see https://facebook.github.io/react/docs/component-specs.html#updating-componentwillreceiveprops
+    //  */
+    // UNSAFE_componentWillReceiveProps(nextProps) {
+    //     this.setState(this.prepareProps(nextProps));
+    // }
 
     /**
      * Component lifecycle function.
@@ -106,8 +102,6 @@ class CurrencyInput extends Component {
      */
     UNSAFE_componentWillUpdate() {
         let node = ReactDOM.findDOMNode(this.theInput);
-        this.inputSelectionStart = node.selectionStart;
-        this.inputSelectionEnd = node.selectionEnd;
     }
 
     /**
@@ -168,8 +162,6 @@ class CurrencyInput extends Component {
         }
 
         this.setSelectionRange(node, selectionStart, selectionEnd);
-        this.inputSelectionStart = selectionStart;
-        this.inputSelectionEnd = selectionEnd;
     }
 
     /**
@@ -223,14 +215,9 @@ class CurrencyInput extends Component {
         let selectionStart = this.props.prefix.length + (isNegative ? 1 : 0);
         this.props.selectAllOnFocus &&
             event.target.setSelectionRange(selectionStart, selectionEnd);
-        this.inputSelectionStart = selectionStart;
-        this.inputSelectionEnd = selectionEnd;
     }
 
-    handleBlur(event) {
-        this.inputSelectionStart = 0;
-        this.inputSelectionEnd = 0;
-    }
+    handleBlur(event) {}
 
     /**
      * Component lifecycle function.
