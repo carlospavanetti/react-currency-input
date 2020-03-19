@@ -18,17 +18,7 @@ export default function mask(
 
     // extract digits. if no digits, fill in a zero.
     const digits = withSetPrecision(value, precision);
-    const raw = Number(digits.join(''));
-
-    // number will be negative if we have an odd number of "-";
-    // ideally, we should only ever have 0, 1 or 2 (positive number, making a number negative
-    // and making a negative number positive, respectively);
-    // if raw value is 0, then the number should never be negative.
-    const negativeSignCount = (value.match(/-/g) || []).length;
-    const negativeSignCountAreOdd = negativeSignCount % 2 === 1;
-    const numberIsNegative =
-        allowNegative && raw !== 0 && negativeSignCountAreOdd;
-    const minusSign = numberIsNegative ? '-' : '';
+    const rawValue = Number(digits.join(''));
 
     const masked = valueWithSeparators(
         digits,
@@ -36,8 +26,11 @@ export default function mask(
         decimalSeparator,
         thousandSeparator
     );
+
+    const isNegative = numberIsNegative(value, raw, allowNegative);
+    const minusSign = isNegative ? '-' : '';
     return {
-        value: numberIsNegative ? -raw : raw,
+        value: isNegative ? -rawValue : rawValue,
         maskedValue: `${minusSign}${prefix}${masked}${suffix}`.trim()
     };
 }
@@ -60,6 +53,16 @@ function withSetPrecision(value, precision) {
         digits => cleanOfExtraneousDigits(digits, precision)
     ];
     return pipe(pipeline, value);
+}
+
+function numberIsNegative(value, raw, allowNegative) {
+    // number will be negative if we have an odd number of "-";
+    // ideally, we should only ever have 0, 1 or 2 (positive number, making a number negative
+    // and making a negative number positive, respectively);
+    // if raw value is 0, then the number should never be negative.
+    const negativeSignCount = (value.match(/-/g) || []).length;
+    const negativeSignCountAreOdd = negativeSignCount % 2 === 1;
+    return allowNegative && raw !== 0 && negativeSignCountAreOdd;
 }
 
 function digitsFromValue(value) {
