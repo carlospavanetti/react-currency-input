@@ -10,6 +10,7 @@ import mask from './mask.js';
 Number.parseFloat = parseFloat;
 
 function FunctionalComponent(props) {
+    const customProps = onlyCustomFrom(props);
     return (
         <input
             ref={props._ref}
@@ -18,7 +19,7 @@ function FunctionalComponent(props) {
             onChange={props.handleChange}
             onFocus={props.handleFocus}
             onMouseUp={props.handleFocus}
-            {...props.customProps}
+            {...customProps}
         />
     );
 }
@@ -47,10 +48,9 @@ class CurrencyInput extends Component {
 
     /**
      * General function used to cleanup and define the final props used for rendering
-     * @returns {{ maskedValue: {String}, value: {Number}, customProps: {Object} }}
+     * @returns {{ maskedValue: {String}, value: {Number} }}
      */
     prepareProps(props) {
-        const customProps = onlyCustomFrom(props);
         const { maskedValue, value } = mask(
             initialValueFrom(props),
             props.precision,
@@ -60,7 +60,7 @@ class CurrencyInput extends Component {
             props.prefix,
             props.suffix
         );
-        return { maskedValue, value, customProps };
+        return { maskedValue, value };
     }
 
     /**
@@ -248,7 +248,7 @@ class CurrencyInput extends Component {
                 maskedValue={this.state.maskedValue}
                 handleChange={this.handleChange}
                 handleFocus={this.handleFocus}
-                customProps={this.state.customProps}
+                {...this.props}
             />
         );
     }
@@ -309,6 +309,12 @@ function onlyCustomFrom(props) {
     delete customProps.suffix;
     delete customProps.selectAllOnFocus;
     delete customProps.autoFocus;
+
+    delete customProps._ref;
+    delete customProps.inputType;
+    delete customProps.maskedValue;
+    delete customProps.handleChange;
+    delete customProps.handleFocus;
     return customProps;
 }
 
