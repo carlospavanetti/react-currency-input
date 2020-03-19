@@ -18,7 +18,7 @@ export default function mask(
 
     // extract digits. if no digits, fill in a zero.
     const digits = withSetPrecision(value, precision);
-    let raw = Number(digits.join(''));
+    const raw = Number(digits.join(''));
 
     // number will be negative if we have an odd number of "-";
     // ideally, we should only ever have 0, 1 or 2 (positive number, making a number negative
@@ -30,7 +30,7 @@ export default function mask(
     const numberIsNegative =
         allowNegative && !allDigitsAreZero && negativeSignCountAreOdd;
 
-    const decimalpos = digits.length - precision - 1; // -1 needed to position the decimal separator before the digits.
+    let decimalpos = digits.length - precision - 1; // -1 needed to position the decimal separator before the digits.
     if (precision > 0) {
         // set the final decimal separator
         digits[decimalpos] = decimalSeparator;
@@ -52,15 +52,11 @@ export default function mask(
         digits.push(suffix);
     }
 
-    // if the number is negative, insert a "-" to
-    // the front of the array and negate the raw value
-    if (numberIsNegative) {
-        digits.unshift('-');
-        raw = -raw;
-    }
+    // if the number is negative, insert a "-" to the front of the array
+    if (numberIsNegative) digits.unshift('-');
 
     return {
-        value: raw,
+        value: numberIsNegative ? -raw : raw,
         maskedValue: digits.join('').trim()
     };
 }
