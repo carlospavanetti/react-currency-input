@@ -9,6 +9,20 @@ import mask from './mask.js';
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/parseFloat#Polyfill
 Number.parseFloat = parseFloat;
 
+function FunctionalComponent(props) {
+    return (
+        <input
+            ref={props._ref}
+            type={props.inputType}
+            value={props.maskedValue}
+            onChange={props.handleChange}
+            onFocus={props.handleFocus}
+            onMouseUp={props.handleFocus}
+            {...props.customProps}
+        />
+    );
+}
+
 class CurrencyInput extends Component {
     constructor(props) {
         super(props);
@@ -274,17 +288,17 @@ class CurrencyInput extends Component {
      * @see https://facebook.github.io/react/docs/component-specs.html#render
      */
     render() {
+        const _ref = (input => {
+            this.theInput = input;
+        }).bind(this);
         return (
-            <input
-                ref={input => {
-                    this.theInput = input;
-                }}
-                type={this.props.inputType}
-                value={this.state.maskedValue}
-                onChange={this.handleChange}
-                onFocus={this.handleFocus}
-                onMouseUp={this.handleFocus}
-                {...this.state.customProps}
+            <FunctionalComponent
+                _ref={_ref}
+                inputType={this.props.inputType}
+                maskedValue={this.state.maskedValue}
+                handleChange={this.handleChange}
+                handleFocus={this.handleFocus}
+                customProps={this.state.customProps}
             />
         );
     }
