@@ -24,11 +24,11 @@ export default function mask(
     // ideally, we should only ever have 0, 1 or 2 (positive number, making a number negative
     // and making a negative number positive, respectively);
     // if raw value is 0, then the number should never be negative.
-    const allDigitsAreZero = raw == 0;
     const negativeSignCount = (value.match(/-/g) || []).length;
     const negativeSignCountAreOdd = negativeSignCount % 2 === 1;
     const numberIsNegative =
-        allowNegative && !allDigitsAreZero && negativeSignCountAreOdd;
+        allowNegative && raw !== 0 && negativeSignCountAreOdd;
+    const minusSign = numberIsNegative ? '-' : '';
 
     let decimalpos = digits.length - precision - 1; // -1 needed to position the decimal separator before the digits.
     if (precision > 0) {
@@ -44,20 +44,10 @@ export default function mask(
         digits.splice(x, 0, thousandSeparator);
     }
 
-    // if we have a prefix or suffix, add them in.
-    if (prefix.length > 0) {
-        digits.unshift(prefix);
-    }
-    if (suffix.length > 0) {
-        digits.push(suffix);
-    }
-
-    // if the number is negative, insert a "-" to the front of the array
-    if (numberIsNegative) digits.unshift('-');
-
+    const maskedValue = digits.join('');
     return {
         value: numberIsNegative ? -raw : raw,
-        maskedValue: digits.join('').trim()
+        maskedValue: `${minusSign}${prefix}${maskedValue}${suffix}`.trim()
     };
 }
 
