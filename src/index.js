@@ -31,16 +31,8 @@ class CurrencyInput extends Component {
         this.handleFocus = this.handleFocus.bind(this);
         this.setSelectionRange = this.setSelectionRange.bind(this);
         this.state = prepareProps(this.props);
+        this.props.liftMaskedValue(this.state.maskedValue);
         this.inputSelectionEnd = 1;
-    }
-
-    /**
-     * Exposes the current masked value.
-     *
-     * @returns {String}
-     */
-    getMaskedValue() {
-        return this.state.maskedValue;
     }
 
     /**
@@ -193,6 +185,7 @@ CurrencyInput.defaultProps = {
     onChangeEvent: function(event, maskValue, value) {
         /*no-op*/
     },
+    liftMaskedValue: function(maskedValue) {},
     autoFocus: false,
     value: '0',
     decimalSeparator: '.',
@@ -318,6 +311,7 @@ function handleChange_(event, props, setState) {
     setState({ maskedValue, value }, () => {
         props.onChange(maskedValue, value, event);
         props.onChangeEvent(event, maskedValue, value);
+        props.liftMaskedValue(maskedValue);
     });
 }
 
@@ -354,6 +348,8 @@ function onlyCustomFrom(props) {
     delete customProps.maskedValue;
     delete customProps.handleChange;
     delete customProps.handleFocus;
+
+    delete customProps.liftMaskedValue;
     return customProps;
 }
 
